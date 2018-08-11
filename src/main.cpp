@@ -1,7 +1,15 @@
+#ifdef __EMSCRIPTEN__
+	#include <emscripten.h>
+#endif
+
 #include <array>
+#include <sstream>
 
 #include <SDL2pp/Texture.hh>
 #include <SDL2pp/Exception.hh>
+
+#include <NFont.h>
+#include <SDL_FontCache.h>
 
 #include "Game.hpp"
 #include "Input.hpp"
@@ -9,13 +17,7 @@
 #include "LocalCoordinates.hpp"
 
 #include "World.hpp"
-
-#include "NFont.h"
-#include "SDL_FontCache.h"
-
-#ifdef __EMSCRIPTEN__
-	#include <emscripten.h>
-#endif
+#include "Resources.hpp"
 
 using Rect = SDL2pp::Rect;
 using Point = SDL2pp::Point;
@@ -60,7 +62,12 @@ class ResourceUI : Presenter {
 private:
   SDL2pp::Renderer &render = Game::Instance()->GetRender();
   NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 14);
+
+  World *world;
 public:
+  ResourceUI(World *world) : world(world) {
+  }
+
   void Render() override {
     LocalCoordinates lc([=] (Point point) {
       return point + Point(400, 392);
@@ -75,10 +82,42 @@ public:
     render.SetDrawColor(Color(192, 192, 192));
     render.FillRect(Rect(lc.t(Point(2, 2)), Point(564, 228)));
 
-    font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(80, 96)), "Peoples:\nFood:\nOxygen:\nMinerals:\nGas:\nScience:");
-    font.drawBox(render.Get(), Rect(lc.t(Point(92, 12)), Point(40, 96)), "50\n100\n23000\n30\n10\n150");
+    font.drawBox(
+      render.Get(),
+      Rect(lc.t(Point(12, 12)), Point(80, 96)),
+      "Peoples:\nFood:\nOxygen:\nMinerals:\nGas:\nScience:"
+    );
 
-    font.drawBox(render.Get(), Rect(lc.t(Point(144, 12)), Point(160, 96)), "10 days until evacuation");
+    font.drawBox(
+      render.Get(),
+      Rect(lc.t(Point(92, 12)), Point(40, 96)),
+      "%d\n%d\n%d\n%d\n%d\n%d",
+      world->GetResource(Resource::Peoples),
+      world->GetResource(Resource::Food),
+      world->GetResource(Resource::Oxygen),
+      world->GetResource(Resource::Minerals),
+      world->GetResource(Resource::Gas),
+      world->GetResource(Resource::Science)
+    );
+
+    font.drawBox(
+      render.Get(),
+      Rect(lc.t(Point(144, 12)), Point(160, 96)),
+      "%d days until evacuation",
+      world->GetDaysUntilEvacuation()
+    );
+
+    std::ostringstream fullLog;
+    for(const auto& logItem : world->GetLog()) {
+      fullLog << logItem << "\n";
+    }
+
+    font.drawBox(
+      render.Get(),
+      Rect(lc.t(Point(144, 40)), Point(400, 176)),
+      "%s",
+      fullLog.str().c_str()
+    );
 
     render.SetDrawColor(oldDrawColor);
   }
@@ -151,9 +190,11 @@ void emscriptenloop() {
 int main() {
   try {
     auto *game = Game::Instance();
+
+    World world;
     Test tt;
     BuildUI ui;
-    ResourceUI rui;
+    ResourceUI rui(&world);
 
   #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(emscriptenloop, 0, 1);

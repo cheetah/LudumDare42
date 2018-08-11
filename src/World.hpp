@@ -1,9 +1,10 @@
 #ifndef _WORLD_HPP_
   #define _WORLD_HPP_
 
-#include <iostream>
+#include <string>
 #include <array>
 #include <vector>
+#include <map>
 
 #include "SDL.h"
 #include "Object.hpp"
@@ -13,22 +14,18 @@ class BaseBuilding;
 
 class World : Object {
 private:
-  static const int SIZE = 10;
+  static const int SIZE = 8;
 
   std::array<std::array<int, SIZE>, SIZE> foundation = {0};
 
-  std::vector<Resource::BaseResource*> resources;
+  std::map<Resource, int> resources;
   std::vector<BaseBuilding*> buildings;
+  std::vector<std::string> worldLog;
 
   float elapsedFromTick = 0.0;
   Uint32 tick = 0;
 
-  Resource::Peoples peoples;
-  Resource::Food food;
-  Resource::Oxygen oxygen;
-  Resource::Minerals minerals;
-  Resource::Gas gas;
-  Resource::ScientificData scientificData;
+  int daysUntilEvacuation = 0;
 public:
   World();
 
@@ -39,19 +36,13 @@ public:
   int GetTick() { return tick; }
   bool Every(int tickPeriod) { return (tick % tickPeriod) == 0; }
 
-  template<class T> void AddResource(T *resource) {
-    resources.push_back(resource);
-  }
+  int GetResource(Resource res);
+  void SetResource(Resource res, int amount);
 
-  template<class T> T* GetResource() {
-    for(Resource::BaseResource *res : resources) {
-      if(typeid(*res) == typeid(T)) {
-        return dynamic_cast<T*>(res);
-      }
-    }
+  void AddLog(const std::string &str);
 
-    return nullptr;
-  }
+  int GetDaysUntilEvacuation();
+  std::vector<std::string>& GetLog();
 };
 
 #endif

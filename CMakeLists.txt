@@ -28,7 +28,7 @@ set(SOURCES
   ${SRC_DIR}/KeyboardInput.cpp
   ${SRC_DIR}/LocalCoordinates.cpp
   ${SRC_DIR}/World.cpp
-  ${SRC_DIR}/Resources.cpp
+  ${SRC_DIR}/Buildings.cpp
   ${LIB_DIR}/nfont/NFont.cpp
   ${LIB_DIR}/nfont/SDL_FontCache.c
 )
@@ -41,6 +41,7 @@ set(HEADERS
   ${SRC_DIR}/KeyboardInput.hpp
   ${SRC_DIR}/LocalCoordinates.hpp
   ${SRC_DIR}/World.hpp
+  ${SRC_DIR}/Buildings.hpp
   ${SRC_DIR}/Resources.hpp
   ${LIB_DIR}/nfont/NFont.h
   ${LIB_DIR}/nfont/SDL_FontCache.h
