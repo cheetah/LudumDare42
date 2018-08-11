@@ -17,7 +17,7 @@ Game::Game() :
     700,
     SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN
   ),
-  render(window, -1, SDL_RENDERER_ACCELERATED)
+  render(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)
 {
   render.SetDrawColor(140, 62, 173);
   lastTime = SDL_GetTicks();

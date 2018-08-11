@@ -26,6 +26,7 @@ set(SOURCES
   ${SRC_DIR}/Input.cpp
   ${SRC_DIR}/MouseInput.cpp
   ${SRC_DIR}/KeyboardInput.cpp
+  ${SRC_DIR}/LocalCoordinates.cpp
   ${SRC_DIR}/World.cpp
   ${SRC_DIR}/Resources.cpp
   ${LIB_DIR}/nfont/NFont.cpp
@@ -38,6 +39,7 @@ set(HEADERS
   ${SRC_DIR}/Input.hpp
   ${SRC_DIR}/MouseInput.hpp
   ${SRC_DIR}/KeyboardInput.hpp
+  ${SRC_DIR}/LocalCoordinates.hpp
   ${SRC_DIR}/World.hpp
   ${SRC_DIR}/Resources.hpp
   ${LIB_DIR}/nfont/NFont.h

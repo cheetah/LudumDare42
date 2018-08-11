@@ -6,6 +6,7 @@
 #include "Game.hpp"
 #include "Input.hpp"
 #include "Presenter.hpp"
+#include "LocalCoordinates.hpp"
 
 #include "World.hpp"
 
@@ -15,6 +16,73 @@
 #ifdef __EMSCRIPTEN__
 	#include <emscripten.h>
 #endif
+
+using Rect = SDL2pp::Rect;
+using Point = SDL2pp::Point;
+using Color = SDL2pp::Color;
+
+class BuildUI : Presenter {
+private:
+  SDL2pp::Renderer &render = Game::Instance()->GetRender();
+  SDL2pp::Texture ground = SDL2pp::Texture(render, "./assets/isometric.png");
+  NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 14);
+public:
+  void RenderCard(LocalCoordinates lc) {
+    Color oldDrawColor = render.GetDrawColor();
+
+    render.SetDrawColor(Color(0, 0, 0));
+    render.DrawRect(Rect(lc.t(Point(0, 0)), Point(320, 112)));
+    render.DrawRect(Rect(lc.t(Point(1, 1)), Point(318, 110)));
+
+    render.SetDrawColor(Color(192, 192, 192));
+    render.FillRect(Rect(lc.t(Point(2, 2)), Point(316, 108)));
+
+    render.Copy(ground, Rect(0, 0, 64, 64), Rect(lc.t(Point(16, 16)), Point(64, 64)));
+
+    font.drawBox(render.Get(), Rect(lc.t(Point(96, 16)), Point(216, 14)), "Minerals: 15 Gas: 10");
+    font.drawBox(render.Get(), Rect(lc.t(Point(96, 40)), Point(216, 58)), "Harvest station\nPlace on mineral field to mine 150 minerals per day");
+
+    render.SetDrawColor(oldDrawColor);
+  }
+
+  void Render() override {
+    for(int i = 0; i < 5; i++) {
+      LocalCoordinates lc([=] (Point point) {
+        return point + Point(32, 32 + i * 120);
+      });
+
+      RenderCard(lc);
+    }
+  }
+};
+
+class ResourceUI : Presenter {
+private:
+  SDL2pp::Renderer &render = Game::Instance()->GetRender();
+  NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 14);
+public:
+  void Render() override {
+    LocalCoordinates lc([=] (Point point) {
+      return point + Point(400, 392);
+    });
+
+    Color oldDrawColor = render.GetDrawColor();
+
+    render.SetDrawColor(Color(0, 0, 0));
+    render.DrawRect(Rect(lc.t(Point(0, 0)), Point(568, 232)));
+    render.DrawRect(Rect(lc.t(Point(1, 1)), Point(566, 230)));
+
+    render.SetDrawColor(Color(192, 192, 192));
+    render.FillRect(Rect(lc.t(Point(2, 2)), Point(564, 228)));
+
+    font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(80, 96)), "Peoples:\nFood:\nOxygen:\nMinerals:\nGas:\nScience:");
+    font.drawBox(render.Get(), Rect(lc.t(Point(92, 12)), Point(40, 96)), "50\n100\n23000\n30\n10\n150");
+
+    font.drawBox(render.Get(), Rect(lc.t(Point(144, 12)), Point(160, 96)), "10 days until evacuation");
+
+    render.SetDrawColor(oldDrawColor);
+  }
+};
 
 class Test : Presenter {
 private:
@@ -27,7 +95,7 @@ private:
   NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 20);
 
   SDL2pp::Point isoPoint(SDL2pp::Point point) {
-    return SDL2pp::Point(point.x - point.y, (point.x + point.y) / 2) + SDL2pp::Point(512, 64);
+    return SDL2pp::Point(point.x - point.y, (point.x + point.y) / 2) + SDL2pp::Point(642, 64);
   }
 
   SDL2pp::Point cartesianPoint(SDL2pp::Point point) {
@@ -84,7 +152,8 @@ int main() {
   try {
     auto *game = Game::Instance();
     Test tt;
-    World w;
+    BuildUI ui;
+    ResourceUI rui;
 
   #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(emscriptenloop, 0, 1);
