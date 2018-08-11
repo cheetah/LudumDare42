@@ -8,8 +8,9 @@ World::World() {
   resources[Resource::Minerals] = 30;
   resources[Resource::Gas]      = 0;
   resources[Resource::Science]  = 0;
-
   resources[Resource::DaysUntilEvacuation] = 10;
+
+  Generate();
 
   AddLog("Game has been started");
 }
@@ -72,6 +73,14 @@ void World::Tick() {
   SetResource(Resource::Peoples, newPeoples);
   SetResource(Resource::Food, newFood);
   SetResource(Resource::Oxygen, newOxygen);
+}
+
+void World::Generate() {
+  for(auto& tileRow : foundation) {
+    for(auto& tile : tileRow) {
+      tile = Rand(6);
+    }
+  }
 }
 
 int World::GetResource(Resource res) { return resources[res]; }

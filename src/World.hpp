@@ -123,6 +123,9 @@ public:
   void Update(float elapsed) override;
   void Tick();
 
+  void Generate();
+  std::array<std::array<int, SIZE>, SIZE>& GetFoundation() { return foundation; }
+
   int GetResource(Resource res);
   void SetResource(Resource res, int amount);
   std::string GetResourceName(Resource res);
@@ -132,8 +135,8 @@ public:
 
   std::map<Building::Type, Building::Info>& GetBuildingInfos() { return buildingInfos; }
 
-  int Rand(int a) { return rand() % a + 1; }
-  bool Every(int tickPeriod) { return (tick % tickPeriod) == 0; }
+  int Rand(int a) const { return rand() % a + 1; }
+  bool Every(int tickPeriod) const { return (tick % tickPeriod) == 0; }
 };
 
 #endif

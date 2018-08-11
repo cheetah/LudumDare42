@@ -2,14 +2,9 @@
 	#include <emscripten.h>
 #endif
 
-#include <array>
-
 #include <SDL2pp/Texture.hh>
 #include <SDL2pp/Exception.hh>
-
 #include <NFont.h>
-#include <SDL_FontCache.h>
-
 #include <fmt/format.h>
 
 #include "Game.hpp"
@@ -130,13 +125,7 @@ public:
       fullLog.append(logItem);
       fullLog.append("\n");
     }
-
-    font.drawBox(
-      render.Get(),
-      Rect(lc.t(Point(144, 40)), Point(400, 176)),
-      "%s",
-      fullLog.c_str()
-    );
+    font.drawBox(render.Get(), Rect(lc.t(Point(144, 40)), Point(400, 176)), "%s", fullLog.c_str());
 
     render.SetDrawColor(oldDrawColor);
   }
@@ -147,56 +136,28 @@ private:
   SDL2pp::Renderer &render = Game::Instance()->GetRender();
   SDL2pp::Texture ground = SDL2pp::Texture(render, "./assets/isometric.png");
 
-  SDL2pp::Rect selectedRect;
-  std::array<std::array<int, 8>, 8> world = {0};
-
-  NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 20);
-
-  SDL2pp::Point isoPoint(SDL2pp::Point point) {
-    return SDL2pp::Point(point.x - point.y, (point.x + point.y) / 2) + SDL2pp::Point(642, 64);
-  }
-
-  SDL2pp::Point cartesianPoint(SDL2pp::Point point) {
-    return SDL2pp::Point((2 * point.x + point.y) / 2, (2 * point.x - point.y) / 2);
-  }
+  World *world;
 public:
-  Test() {
-    RandomizeGround();
-  }
-
-  void RandomizeGround() {
-    for(auto& tileRow : world) {
-      for(auto& tile : tileRow) {
-        tile = rand() % 4;
-      }
-    }
+  Test(World *world) : world(world) {
   }
 
   void Interact(Input *input) override {
-    selectedRect = SDL2pp::Rect(isoPoint(input->Mouse()->GetPosition()), SDL2pp::Point(64, 64));
-
     if(input->Keyboard()->KeyTriggered(SDL_SCANCODE_R)) {
-      RandomizeGround();
+      world->Generate();
     }
   }
 
   void Render() override {
-    for(const auto& tileRow : world) {
-      auto rowIndex = &tileRow - &world[0];
+    auto &tiles = world->GetFoundation();
+    for(const auto& tileRow : tiles) {
+      auto rowIndex = &tileRow - &tiles[0];
       for(const auto& tile : tileRow) {
         auto colIndex = &tile - &tileRow[0];
 
-        render.Copy(
-          ground,
-          SDL2pp::Rect(0 + 64 * tile, 0, 64, 64),
-          SDL2pp::Rect(isoPoint(SDL2pp::Point(rowIndex * 32, colIndex * 32)), SDL2pp::Point(64, 64))
-        );
-
-        // render.FillRect(selectedRect);
+        SDL2pp::Point tilePoint = SDL2pp::Point(642, 64) + LocalCoordinates::Isometric(SDL2pp::Point(rowIndex * 32, colIndex * 32));
+        render.Copy(ground, SDL2pp::Rect(0 + 64 * tile, 0, 64, 64), SDL2pp::Rect(tilePoint, SDL2pp::Point(64, 64)));
       }
     }
-
-    // font.draw(render.Get(), 64, 64, "Multi\nline\ntext");
   }
 };
 
@@ -211,7 +172,7 @@ int main() {
     auto *game = Game::Instance();
 
     World world;
-    Test tt;
+    Test tt(&world);
     BuildUI ui(&world);
     ResourceUI rui(&world);
 

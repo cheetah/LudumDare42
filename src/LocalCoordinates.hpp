@@ -12,8 +12,10 @@ private:
 public:
   LocalCoordinates(std::function<SDL2pp::Point(SDL2pp::Point point)> func);
 
-  // Rect t(Rect rect);
   SDL2pp::Point t(SDL2pp::Point point);
+
+  static SDL2pp::Point Isometric(SDL2pp::Point point);
+  static SDL2pp::Point Cartesian(SDL2pp::Point point);
 };
 
 #endif
