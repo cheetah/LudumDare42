@@ -1,15 +1,15 @@
-#include <sstream>
+#include <fmt/format.h>
 #include "World.hpp"
 
 World::World() {
-  daysUntilEvacuation = 10;
-
   resources[Resource::Peoples]  = 50;
   resources[Resource::Food]     = 50;
   resources[Resource::Oxygen]   = 100;
   resources[Resource::Minerals] = 30;
   resources[Resource::Gas]      = 0;
   resources[Resource::Science]  = 0;
+
+  resources[Resource::DaysUntilEvacuation] = 10;
 
   AddLog("Game has been started");
 }
@@ -25,49 +25,57 @@ void World::Update(float elapsed) {
 }
 
 void World::Tick() {
-  std::ostringstream logItem;
+  AddLog(fmt::format("Tick {} started", tick));
 
   int currentPeoples = GetResource(Resource::Peoples);
   int currentFood    = GetResource(Resource::Food);
+  int currentOxygen  = GetResource(Resource::Oxygen);
 
   int newPeoples = currentPeoples;
   int newFood    = currentFood;
+  int newOxygen  = currentOxygen;
 
   // Advance day
-  if(Every(12)) {
-    daysUntilEvacuation -= 1;
-
-    logItem.str("");
-    logItem << "Another day has been started. Evacuation ETA "
-            << daysUntilEvacuation
-            << " days";
-    AddLog(logItem.str());
+  if(Every(DAY_DURATION)) {
+    int currentDays = GetResource(Resource::DaysUntilEvacuation);
+    SetResource(Resource::DaysUntilEvacuation, currentDays - 1);
+    AddLog(fmt::format("Another day has been started. Evacuation ETA {} days", currentDays));
   }
 
   // Food
-  if(Every(12)) {
+  if(Every(DAY_DURATION)) {
     newFood -= currentPeoples;
-    logItem.str("");
-    logItem << currentPeoples
-            << " food was eaten";
-    AddLog(logItem.str());
+    AddLog(fmt::format("{} food was eaten", currentPeoples));
 
     if(currentFood < currentPeoples) {
       int foodDeficit = currentPeoples - currentFood;
       int deadPeoples = Rand(foodDeficit);
 
       newPeoples -= deadPeoples;
-      logItem.str("");
-      logItem << deadPeoples
-              << " peoples died from starvation";
-      AddLog(logItem.str());
+      AddLog(fmt::format("{} peoples died from starvation", deadPeoples));
+    }
+  }
+
+  // Oxygen
+  if(Every(DAY_DURATION / 10)) {
+    newOxygen -= currentPeoples;
+
+    if(currentOxygen < currentPeoples) {
+      int oxygenDeficit = currentPeoples - currentOxygen;
+      int deadPeoples = Rand(oxygenDeficit);
+
+      newPeoples -= deadPeoples;
+      AddLog(fmt::format("{} peoples died from suffocation", deadPeoples));
     }
   }
 
   SetResource(Resource::Peoples, newPeoples);
   SetResource(Resource::Food, newFood);
+  SetResource(Resource::Oxygen, newOxygen);
 }
 
+int World::GetResource(Resource res) { return resources[res]; }
+std::string World::GetResourceName(Resource res) { return resourceNames[res]; }
 void World::SetResource(Resource res, int amount) {
   resources[res] = amount;
   if(resources[res] < 0) {
@@ -75,11 +83,8 @@ void World::SetResource(Resource res, int amount) {
   }
 }
 
+std::vector<std::string>& World::GetLog() { return worldLog; }
 void World::AddLog(const std::string &str) {
   worldLog.resize(15);
   worldLog.insert(worldLog.begin(), str);
 }
-
-int World::GetResource(Resource res) { return resources[res]; }
-int World::GetDaysUntilEvacuation() { return daysUntilEvacuation; }
-std::vector<std::string>& World::GetLog() { return worldLog; }

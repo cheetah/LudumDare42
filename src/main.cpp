@@ -3,7 +3,6 @@
 #endif
 
 #include <array>
-#include <sstream>
 
 #include <SDL2pp/Texture.hh>
 #include <SDL2pp/Exception.hh>
@@ -11,13 +10,14 @@
 #include <NFont.h>
 #include <SDL_FontCache.h>
 
+#include <fmt/format.h>
+
 #include "Game.hpp"
 #include "Input.hpp"
 #include "Presenter.hpp"
 #include "LocalCoordinates.hpp"
 
 #include "World.hpp"
-#include "Resources.hpp"
 
 using Rect = SDL2pp::Rect;
 using Point = SDL2pp::Point;
@@ -28,8 +28,17 @@ private:
   SDL2pp::Renderer &render = Game::Instance()->GetRender();
   SDL2pp::Texture ground = SDL2pp::Texture(render, "./assets/isometric.png");
   NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 14);
+
+  World *world;
 public:
-  void RenderCard(LocalCoordinates lc) {
+  BuildUI(World *world) : world(world) {
+  }
+
+  void RenderCard(int index, const Building::Info *info) {
+    LocalCoordinates lc([=] (Point point) {
+      return point + Point(32, 32 + index * 120);
+    });
+
     Color oldDrawColor = render.GetDrawColor();
 
     render.SetDrawColor(Color(0, 0, 0));
@@ -39,21 +48,30 @@ public:
     render.SetDrawColor(Color(192, 192, 192));
     render.FillRect(Rect(lc.t(Point(2, 2)), Point(316, 108)));
 
-    render.Copy(ground, Rect(0, 0, 64, 64), Rect(lc.t(Point(16, 16)), Point(64, 64)));
+    render.Copy(ground, info->tileRect, Rect(lc.t(Point(16, 16)), Point(64, 64)));
 
-    font.drawBox(render.Get(), Rect(lc.t(Point(96, 16)), Point(216, 14)), "Minerals: 15 Gas: 10");
-    font.drawBox(render.Get(), Rect(lc.t(Point(96, 40)), Point(216, 58)), "Harvest station\nPlace on mineral field to mine 150 minerals per day");
+    std::string cost = "";
+    for(const auto& res : info->cost) {
+      cost.append(fmt::format("{} {} ", res.second, world->GetResourceName(res.first)));
+    }
+    font.drawBox(render.Get(), Rect(lc.t(Point(96, 16)), Point(216, 14)), "%s", cost.c_str());
+
+    font.drawBox(
+      render.Get(),
+      Rect(lc.t(Point(96, 40)), Point(216, 58)),
+      "%s\n%s",
+      info->name.c_str(),
+      info->description.c_str()
+    );
 
     render.SetDrawColor(oldDrawColor);
   }
 
   void Render() override {
-    for(int i = 0; i < 5; i++) {
-      LocalCoordinates lc([=] (Point point) {
-        return point + Point(32, 32 + i * 120);
-      });
-
-      RenderCard(lc);
+    int index = 0;
+    for(const auto& el : world->GetBuildingInfos()) {
+      RenderCard(index, &el.second);
+      index++;
     }
   }
 };
@@ -104,19 +122,20 @@ public:
       render.Get(),
       Rect(lc.t(Point(144, 12)), Point(160, 96)),
       "%d days until evacuation",
-      world->GetDaysUntilEvacuation()
+      world->GetResource(Resource::DaysUntilEvacuation)
     );
 
-    std::ostringstream fullLog;
+    std::string fullLog;
     for(const auto& logItem : world->GetLog()) {
-      fullLog << logItem << "\n";
+      fullLog.append(logItem);
+      fullLog.append("\n");
     }
 
     font.drawBox(
       render.Get(),
       Rect(lc.t(Point(144, 40)), Point(400, 176)),
       "%s",
-      fullLog.str().c_str()
+      fullLog.c_str()
     );
 
     render.SetDrawColor(oldDrawColor);
@@ -173,7 +192,7 @@ public:
           SDL2pp::Rect(isoPoint(SDL2pp::Point(rowIndex * 32, colIndex * 32)), SDL2pp::Point(64, 64))
         );
 
-        render.FillRect(selectedRect);
+        // render.FillRect(selectedRect);
       }
     }
 
@@ -193,7 +212,7 @@ int main() {
 
     World world;
     Test tt;
-    BuildUI ui;
+    BuildUI ui(&world);
     ResourceUI rui(&world);
 
   #ifdef __EMSCRIPTEN__
