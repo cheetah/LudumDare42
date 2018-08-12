@@ -231,6 +231,7 @@ public:
 
   bool TryToBuild(Building::Type building, int x, int y);
 
+  bool HasEvent() const { return (currentEvent != nullptr); }
   void EmitEvent(Event::Type type);
   void HandleStepEvent(int step);
   int GetCurrentEventStep() const { return currentEventStep; }

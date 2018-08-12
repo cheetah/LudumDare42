@@ -96,6 +96,11 @@ public:
   }
 
   void Interact(Input *input) override {
+    if(world->HasEvent()) {
+      draggedBuilding.first = Building::Type::Null;
+      return;
+    }
+
     Point mousePosition = input->Mouse()->GetPosition();
 
     if(draggedBuilding.first != Building::Type::Null) {
@@ -246,14 +251,14 @@ public:
   }
 };
 
-class Test : Presenter {
+class FoundationUI : Presenter {
 private:
   SDL2pp::Renderer &render = Game::Instance()->GetRender();
   SDL2pp::Texture ground = SDL2pp::Texture(render, "./assets/isometric.png");
 
   World *world;
 public:
-  Test(World *world) : world(world) {
+  FoundationUI(World *world) : world(world) {
   }
 
   void Interact(Input *input) override {
@@ -287,9 +292,9 @@ int main() {
     auto *game = Game::Instance();
 
     World world;
-    Test tt(&world);
-    BuildUI ui(&world);
+    FoundationUI fui(&world);
     ResourceUI rui(&world);
+    BuildUI ui(&world);
     ModalUI mui(&world);
 
   #ifdef __EMSCRIPTEN__
