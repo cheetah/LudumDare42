@@ -18,6 +18,69 @@ using Rect = SDL2pp::Rect;
 using Point = SDL2pp::Point;
 using Color = SDL2pp::Color;
 
+class ModalUI : Presenter {
+private:
+  SDL2pp::Renderer &render = Game::Instance()->GetRender();
+  NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 18);
+
+  World *world;
+  int step = 0;
+  Event::Info *event = nullptr;
+public:
+  ModalUI(World *world) : world(world) {
+  }
+
+  void Interact(Input *input) override {
+    step = world->GetCurrentEventStep();
+    event = world->GetCurrentEvent();
+    if(event == nullptr) {
+      return;
+    }
+
+    int index = 1;
+    for(const auto& choice : event->steps[step].choices) {
+      int key = 29 + index;
+      if(key >= 30 && key < 39 && input->Keyboard()->KeyTriggered(static_cast<SDL_Scancode>(key))) {
+        world->HandleStepEvent(choice.first);
+      }
+      index++;
+    }
+  }
+
+  void Render() override {
+    if(event == nullptr) {
+      return;
+    }
+
+    LocalCoordinates lc([] (Point point) {
+      return point + Point(150, 150);
+    });
+
+    Color oldDrawColor = render.GetDrawColor();
+
+    render.SetDrawColor(Color(0, 0, 0));
+    render.DrawRect(Rect(lc.t(Point(0, 0)), Point(700, 400)));
+    render.DrawRect(Rect(lc.t(Point(1, 1)), Point(698, 398)));
+
+    render.SetDrawColor(Color(192, 192, 192));
+    render.FillRect(Rect(lc.t(Point(2, 2)), Point(696, 396)));
+
+    std::string fullText = "";
+    fullText.append(event->steps[0].text.c_str());
+    fullText.append("\n\n");
+
+    int index = 1;
+    for(const auto& choice : event->steps[step].choices) {
+      fullText.append(fmt::format("    {}. {}\n", index, choice.second));
+      index++;
+    }
+
+    font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(676, 376)), "%s", fullText.c_str());
+
+    render.SetDrawColor(oldDrawColor);
+  }
+};
+
 class BuildUI : Presenter {
 private:
   SDL2pp::Renderer &render = Game::Instance()->GetRender();
@@ -175,6 +238,7 @@ int main() {
     Test tt(&world);
     BuildUI ui(&world);
     ResourceUI rui(&world);
+    ModalUI mui(&world);
 
   #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(emscriptenloop, 0, 1);

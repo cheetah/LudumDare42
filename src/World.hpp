@@ -9,8 +9,6 @@
 #include <SDL2pp/Rect.hh>
 #include "Object.hpp"
 
-
-
 enum class Resource {
   Peoples,
   Food,
@@ -40,6 +38,24 @@ namespace Building {
   };
 };
 
+namespace Event {
+  enum class Type {
+    Start,
+    Win,
+    Lose
+  };
+
+  struct Step {
+    std::string text;
+    std::map<int, std::string> choices;
+  };
+
+  struct Info {
+    Type type;
+    std::map<int, Step> steps;
+  };
+}
+
 class World : Object {
 private:
   static const int SIZE = 8;
@@ -51,9 +67,11 @@ private:
   std::vector<Building::Type> buildings;
   std::vector<std::string> worldLog;
 
-  bool isPaused = false;
   int tick = 0;
   float elapsedFromTick = 0.0;
+
+  int currentEventStep = 0;
+  Event::Info *currentEvent = nullptr;
 
   std::map<Resource, std::string> resourceNames = {
     {Resource::Peoples, "peoples"},
@@ -117,18 +135,68 @@ private:
     {Building::Type::Refinery, refineryInfo},
     {Building::Type::ScienceLab, scienceLabInfo}
   };
+
+  Event::Info startEvent = Event::Info{
+    .type = Event::Type::Start,
+    .steps = std::map<int, Event::Step>{
+      {0, Event::Step{
+        .text = "You are head of research.",
+        .choices = std::map<int, std::string>{
+          {1, "Start game"}
+        }
+      }}
+    }
+  };
+
+  Event::Info winEvent = Event::Info{
+    .type = Event::Type::Win,
+    .steps = std::map<int, Event::Step>{
+      {0, Event::Step{
+        .text = "Congratulations! You win.",
+        .choices = std::map<int, std::string>{
+          {1, "Restart game"}
+        }
+      }}
+    }
+  };
+
+  Event::Info loseEvent = Event::Info{
+    .type = Event::Type::Lose,
+    .steps = std::map<int, Event::Step>{
+      {0, Event::Step{
+        .text = "Sorry but you lost.",
+        .choices = std::map<int, std::string>{
+          {1, "Restart game"}
+        }
+      }}
+    }
+  };
+
+  std::map<Event::Type, Event::Info*> eventInfos = {
+    {Event::Type::Start, &startEvent},
+    {Event::Type::Win, &winEvent},
+    {Event::Type::Lose, &loseEvent},
+  };
 public:
   World();
+
+  void Initialize();
+  void Generate();
+  void CheckWinLose();
 
   void Update(float elapsed) override;
   void Tick();
 
-  void Generate();
   std::array<std::array<int, SIZE>, SIZE>& GetFoundation() { return foundation; }
 
   int GetResource(Resource res);
   void SetResource(Resource res, int amount);
   std::string GetResourceName(Resource res);
+
+  void EmitEvent(Event::Type type);
+  void HandleStepEvent(int step);
+  int GetCurrentEventStep() const { return currentEventStep; }
+  Event::Info* GetCurrentEvent() const { return currentEvent; }
 
   std::vector<std::string>& GetLog();
   void AddLog(const std::string &str);
