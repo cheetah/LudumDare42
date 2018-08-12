@@ -31,7 +31,7 @@ void World::Initialize() {
 void World::Generate() {
   for(auto& tileRow : foundation) {
     for(auto& tile : tileRow) {
-      tile = Rand(6);
+      tile = static_cast<Tile::Type>(Rand(3));
     }
   }
 }
@@ -119,6 +119,15 @@ void World::SetResource(Resource res, int amount) {
   if(resources[res] < 0) {
     resources[res] = 0;
   }
+}
+
+bool World::TryToBuild(Building::Type building, int x, int y) {
+  if(x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
+    return false;
+  }
+
+  foundation[x][y] = Building::Tiles[building];
+  return true;
 }
 
 void World::EmitEvent(Event::Type type) {

@@ -9,7 +9,36 @@
 #include <SDL2pp/Rect.hh>
 #include "Object.hpp"
 
+namespace Tile {
+  enum class Type {
+    Null,
+    Ground,
+    Minerals,
+    Gas,
+    Biodome,
+    OxygenTank,
+    HarvestStation,
+    Refinery,
+    ScienceLab
+  };
+
+  static std::map<Type, SDL2pp::Rect> Tiles{
+    {Type::Null,           SDL2pp::Rect(0, 0, 0, 0)},
+
+    {Type::Ground,         SDL2pp::Rect(0 * 64, 0 * 64, 64, 64)},
+    {Type::Minerals,       SDL2pp::Rect(1 * 64, 0 * 64, 64, 64)},
+    {Type::Gas,            SDL2pp::Rect(2 * 64, 0 * 64, 64, 64)},
+
+    {Type::Biodome,        SDL2pp::Rect(0 * 64, 1 * 64, 64, 64)},
+    {Type::OxygenTank,     SDL2pp::Rect(3 * 64, 1 * 64, 64, 64)},
+    {Type::HarvestStation, SDL2pp::Rect(1 * 64, 1 * 64, 64, 64)},
+    {Type::Refinery,       SDL2pp::Rect(2 * 64, 1 * 64, 64, 64)},
+    {Type::ScienceLab,     SDL2pp::Rect(4 * 64, 1 * 64, 64, 64)},
+  };
+};
+
 enum class Resource {
+  Null,
   Peoples,
   Food,
   Oxygen,
@@ -21,6 +50,7 @@ enum class Resource {
 
 namespace Building {
   enum class Type {
+    Null,
     Biodome,
     OxygenTank,
     HarvestStation,
@@ -34,12 +64,21 @@ namespace Building {
     std::string description;
     std::map<Resource, int> cost;
     std::map<Resource, int> production;
-    SDL2pp::Rect tileRect;
+  };
+
+  static std::map<Type, Tile::Type> Tiles{
+    {Type::Null,           Tile::Type::Null},
+    {Type::Biodome,        Tile::Type::Biodome},
+    {Type::OxygenTank,     Tile::Type::OxygenTank},
+    {Type::HarvestStation, Tile::Type::HarvestStation},
+    {Type::Refinery,       Tile::Type::Refinery},
+    {Type::ScienceLab,     Tile::Type::ScienceLab},
   };
 };
 
 namespace Event {
   enum class Type {
+    Null,
     Start,
     Win,
     Lose
@@ -61,7 +100,7 @@ private:
   static const int SIZE = 8;
   static const int DAY_DURATION = 120;
 
-  std::array<std::array<int, SIZE>, SIZE> foundation = {0};
+  std::array<std::array<Tile::Type, SIZE>, SIZE> foundation = {Tile::Type::Null};
 
   std::map<Resource, int> resources;
   std::vector<Building::Type> buildings;
@@ -89,7 +128,6 @@ private:
     .description = "Can be placed on any tile. Produces food and oxygen.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 30}, {Resource::Gas, 10} },
     .production = std::map<Resource, int>{ {Resource::Food, 25}, {Resource::Oxygen, 100} },
-    .tileRect = SDL2pp::Rect(0 * 64, 0 * 64, 64, 64)
   };
 
   Building::Info oxygenTankInfo = Building::Info{
@@ -98,7 +136,6 @@ private:
     .description = "Can be placed on any tile. Stores oxygen inside.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 30} },
     .production = std::map<Resource, int>{},
-    .tileRect = SDL2pp::Rect(1 * 64, 0 * 64, 64, 64)
   };
 
   Building::Info harvestStationInfo = Building::Info{
@@ -107,7 +144,6 @@ private:
     .description = "Can be placed only on mineral tile. Mines minerals.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 10} },
     .production = std::map<Resource, int>{ {Resource::Minerals, 100} },
-    .tileRect = SDL2pp::Rect(2 * 64, 0 * 64, 64, 64)
   };
 
   Building::Info refineryInfo = Building::Info{
@@ -116,7 +152,6 @@ private:
     .description = "Can be placed only on geyser tile. Refines gas.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 50} },
     .production = std::map<Resource, int>{ {Resource::Gas, 50} },
-    .tileRect = SDL2pp::Rect(3 * 64, 0 * 64, 64, 64)
   };
 
   Building::Info scienceLabInfo = Building::Info{
@@ -125,7 +160,6 @@ private:
     .description = "Can be placed on any tile. Produces scientific data.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 50}, {Resource::Gas, 20} },
     .production = std::map<Resource, int>{ {Resource::Science, 50} },
-    .tileRect = SDL2pp::Rect(4 * 64, 0 * 64, 64, 64)
   };
 
   std::map<Building::Type, Building::Info> buildingInfos = {
@@ -187,11 +221,15 @@ public:
   void Update(float elapsed) override;
   void Tick();
 
-  std::array<std::array<int, SIZE>, SIZE>& GetFoundation() { return foundation; }
+  SDL2pp::Rect GetTile(Tile::Type type) const { return Tile::Tiles[type]; }
+  SDL2pp::Rect GetTile(Building::Type type) const { return Tile::Tiles[Building::Tiles[type]]; }
+  std::array<std::array<Tile::Type, SIZE>, SIZE>& GetFoundation() { return foundation; }
 
   int GetResource(Resource res);
   void SetResource(Resource res, int amount);
   std::string GetResourceName(Resource res);
+
+  bool TryToBuild(Building::Type building, int x, int y);
 
   void EmitEvent(Event::Type type);
   void HandleStepEvent(int step);

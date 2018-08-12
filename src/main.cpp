@@ -88,8 +88,44 @@ private:
   NFont font = NFont(render.Get(), "./assets/Fontana.ttf", 14);
 
   World *world;
+  Building::Type hoveredBuilding = Building::Type::Null;
+  std::pair<Building::Type, Point> draggedBuilding = {Building::Type::Null, Point(0, 0)};
+  std::map<Building::Type, Rect> colliders;
 public:
   BuildUI(World *world) : world(world) {
+  }
+
+  void Interact(Input *input) override {
+    Point mousePosition = input->Mouse()->GetPosition();
+
+    if(draggedBuilding.first != Building::Type::Null) {
+      draggedBuilding.second = mousePosition;
+      if(input->Mouse()->ButtonTriggered(SDL_BUTTON_RIGHT) || input->Keyboard()->KeyTriggered(SDL_SCANCODE_ESCAPE)) {
+        draggedBuilding.first = Building::Type::Null;
+      }
+
+      if(input->Mouse()->ButtonTriggered(SDL_BUTTON_LEFT)) {
+        Point groundPoint = mousePosition - SDL2pp::Point(642, 64);
+        int x = (groundPoint.x + 2 * groundPoint.y) / 64 - 1;
+        int y = (groundPoint.y * 2 - groundPoint.x) / 64;
+
+        if(world->TryToBuild(draggedBuilding.first, x, y)) {
+          draggedBuilding.first = Building::Type::Null;
+        }
+      }
+    }
+
+    hoveredBuilding = Building::Type::Null;
+    for(const auto& collider : colliders) {
+      if(collider.second.Contains(mousePosition)) {
+        hoveredBuilding = collider.first;
+      }
+    }
+
+    if(hoveredBuilding != Building::Type::Null && input->Mouse()->ButtonTriggered(SDL_BUTTON_LEFT)) {
+      draggedBuilding.first = hoveredBuilding;
+      draggedBuilding.second = mousePosition;
+    }
   }
 
   void RenderCard(int index, const Building::Info *info) {
@@ -97,16 +133,24 @@ public:
       return point + Point(32, 32 + index * 120);
     });
 
+    if(colliders.count(info->type) == 0) {
+      colliders[info->type] = Rect(lc.t(Point(0, 0)), Point(320, 112));
+    }
+
     Color oldDrawColor = render.GetDrawColor();
 
-    render.SetDrawColor(Color(0, 0, 0));
+    if(hoveredBuilding == info->type) {
+      render.SetDrawColor(Color(255, 0, 0));
+    } else {
+      render.SetDrawColor(Color(0, 0, 0));
+    }
     render.DrawRect(Rect(lc.t(Point(0, 0)), Point(320, 112)));
     render.DrawRect(Rect(lc.t(Point(1, 1)), Point(318, 110)));
 
     render.SetDrawColor(Color(192, 192, 192));
     render.FillRect(Rect(lc.t(Point(2, 2)), Point(316, 108)));
 
-    render.Copy(ground, info->tileRect, Rect(lc.t(Point(16, 16)), Point(64, 64)));
+    render.Copy(ground, world->GetTile(info->type), Rect(lc.t(Point(16, 16)), Point(64, 64)));
 
     std::string cost = "";
     for(const auto& res : info->cost) {
@@ -121,6 +165,14 @@ public:
       info->name.c_str(),
       info->description.c_str()
     );
+
+    if(draggedBuilding.first != Building::Type::Null) {
+      render.Copy(
+        ground,
+        world->GetTile(draggedBuilding.first),
+        Rect(draggedBuilding.second - Point(32, 32), Point(64, 64))
+      );
+    }
 
     render.SetDrawColor(oldDrawColor);
   }
@@ -218,7 +270,7 @@ public:
         auto colIndex = &tile - &tileRow[0];
 
         SDL2pp::Point tilePoint = SDL2pp::Point(642, 64) + LocalCoordinates::Isometric(SDL2pp::Point(rowIndex * 32, colIndex * 32));
-        render.Copy(ground, SDL2pp::Rect(0 + 64 * tile, 0, 64, 64), SDL2pp::Rect(tilePoint, SDL2pp::Point(64, 64)));
+        render.Copy(ground, world->GetTile(tile), SDL2pp::Rect(tilePoint, SDL2pp::Point(64, 64)));
       }
     }
   }
