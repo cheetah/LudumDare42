@@ -34,6 +34,11 @@ void World::Generate() {
       tile = static_cast<Tile::Type>(Rand(3));
     }
   }
+
+  foundation[Rand(6)][Rand(6)] = Tile::Type::Biodome;
+  foundation[Rand(6)][Rand(6)] = Tile::Type::OxygenTank;
+  buildings.push_back(Building::Type::Biodome);
+  buildings.push_back(Building::Type::OxygenTank);
 }
 
 void World::CheckWinLose() {
@@ -63,7 +68,26 @@ void World::Update(float elapsed) {
 void World::Tick() {
   CheckWinLose();
 
-  AddLog(fmt::format("Tick {} started", tick));
+  for(const auto& buildingType : buildings) {
+    for(const auto& prod : buildingInfos[buildingType]->production) {
+      if(Every(prod.second)) UpdateResource(prod.first, 5);
+    }
+  }
+
+  if(Every(10) && Rand(10) > 8) {
+    int randomX = Rand(8) - 1;
+    int randomY = Rand(8) - 1;
+    auto tile = foundation[randomX][randomY];
+    if(Building::ReverseTiles[tile] != Building::Type::Null) {
+      buildings.erase(std::find(buildings.begin(), buildings.end(), Building::ReverseTiles[tile]));
+      if(Building::ReverseTiles[tile] == Building::Type::OxygenTank) {
+        SetResource(Resource::Oxygen, GetResource(Resource::Oxygen));
+      }
+    }
+
+    foundation[randomX][randomY] = Tile::Type::Null;
+    AddLog("oh no, another one piece of ground has been fall");
+  }
 
   int currentPeoples = GetResource(Resource::Peoples);
   int currentFood    = GetResource(Resource::Food);
@@ -114,18 +138,38 @@ void World::Tick() {
 
 int World::GetResource(Resource res) { return resources[res]; }
 std::string World::GetResourceName(Resource res) { return resourceNames[res]; }
+void World::UpdateResource(Resource res, int amount) { SetResource(res, GetResource(res) + amount); }
 void World::SetResource(Resource res, int amount) {
   resources[res] = amount;
   if(resources[res] < 0) {
     resources[res] = 0;
   }
+
+  if(res == Resource::Oxygen) {
+    int maxOxygen = 1000 * std::count (buildings.begin(), buildings.end(), Building::Type::OxygenTank);
+    if(resources[Resource::Oxygen] > maxOxygen) {
+      resources[Resource::Oxygen] = maxOxygen;
+    }
+  }
 }
 
 bool World::TryToBuild(Building::Type building, int x, int y) {
-  if(x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
-    return false;
+  if(x < 0 || x >= SIZE || y < 0 || y >= SIZE) return false;
+  if(foundation[x][y] == Tile::Type::Null) return false;
+
+  auto tiles = buildingInfos[building]->placementTiles;
+  if(!tiles.empty()) {
+    auto found = std::find(std::begin(tiles), std::end(tiles), foundation[x][y]);
+    if(found == std::end(tiles)) return false;
   }
 
+  auto cost = buildingInfos[building]->cost;
+  for(const auto& res : cost) {
+    if(GetResource(res.first) < res.second) return false;
+  }
+
+  for(const auto& res : cost) UpdateResource(res.first, -res.second);
+  buildings.push_back(building);
   foundation[x][y] = Building::Tiles[building];
   return true;
 }

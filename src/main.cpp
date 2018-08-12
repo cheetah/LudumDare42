@@ -185,7 +185,7 @@ public:
   void Render() override {
     int index = 0;
     for(const auto& el : world->GetBuildingInfos()) {
-      RenderCard(index, &el.second);
+      RenderCard(index, el.second);
       index++;
     }
   }

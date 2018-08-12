@@ -64,6 +64,7 @@ namespace Building {
     std::string description;
     std::map<Resource, int> cost;
     std::map<Resource, int> production;
+    std::vector<Tile::Type> placementTiles;
   };
 
   static std::map<Type, Tile::Type> Tiles{
@@ -73,6 +74,20 @@ namespace Building {
     {Type::HarvestStation, Tile::Type::HarvestStation},
     {Type::Refinery,       Tile::Type::Refinery},
     {Type::ScienceLab,     Tile::Type::ScienceLab},
+  };
+
+  static std::map<Tile::Type, Type> ReverseTiles{
+    {Tile::Type::Null,           Type::Null},
+
+    {Tile::Type::Ground,         Type::Null},
+    {Tile::Type::Minerals,       Type::Null},
+    {Tile::Type::Gas,            Type::Null},
+
+    {Tile::Type::Biodome,        Type::Biodome},
+    {Tile::Type::OxygenTank,     Type::OxygenTank},
+    {Tile::Type::HarvestStation, Type::HarvestStation},
+    {Tile::Type::Refinery,       Type::Refinery},
+    {Tile::Type::ScienceLab,     Type::ScienceLab},
   };
 };
 
@@ -127,7 +142,8 @@ private:
     .name = "Biodome",
     .description = "Can be placed on any tile. Produces food and oxygen.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 30}, {Resource::Gas, 10} },
-    .production = std::map<Resource, int>{ {Resource::Food, 25}, {Resource::Oxygen, 100} },
+    .production = std::map<Resource, int>{ {Resource::Food, 10}, {Resource::Oxygen, 5} },
+    .placementTiles = std::vector<Tile::Type>{}
   };
 
   Building::Info oxygenTankInfo = Building::Info{
@@ -136,6 +152,7 @@ private:
     .description = "Can be placed on any tile. Stores oxygen inside.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 30} },
     .production = std::map<Resource, int>{},
+    .placementTiles = std::vector<Tile::Type>{}
   };
 
   Building::Info harvestStationInfo = Building::Info{
@@ -143,7 +160,8 @@ private:
     .name = "Harvest Station",
     .description = "Can be placed only on mineral tile. Mines minerals.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 10} },
-    .production = std::map<Resource, int>{ {Resource::Minerals, 100} },
+    .production = std::map<Resource, int>{ {Resource::Minerals, 5} },
+    .placementTiles = std::vector<Tile::Type>{ Tile::Type::Minerals }
   };
 
   Building::Info refineryInfo = Building::Info{
@@ -151,7 +169,8 @@ private:
     .name = "Refinery",
     .description = "Can be placed only on geyser tile. Refines gas.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 50} },
-    .production = std::map<Resource, int>{ {Resource::Gas, 50} },
+    .production = std::map<Resource, int>{ {Resource::Gas, 15} },
+    .placementTiles = std::vector<Tile::Type>{ Tile::Type::Gas }
   };
 
   Building::Info scienceLabInfo = Building::Info{
@@ -159,15 +178,16 @@ private:
     .name = "Science Laboratory",
     .description = "Can be placed on any tile. Produces scientific data.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 50}, {Resource::Gas, 20} },
-    .production = std::map<Resource, int>{ {Resource::Science, 50} },
+    .production = std::map<Resource, int>{ {Resource::Science, 20} },
+    .placementTiles = std::vector<Tile::Type>{}
   };
 
-  std::map<Building::Type, Building::Info> buildingInfos = {
-    {Building::Type::Biodome, biodomeInfo},
-    {Building::Type::OxygenTank, oxygenTankInfo},
-    {Building::Type::HarvestStation, harvestStationInfo},
-    {Building::Type::Refinery, refineryInfo},
-    {Building::Type::ScienceLab, scienceLabInfo}
+  std::map<Building::Type, Building::Info*> buildingInfos = {
+    {Building::Type::Biodome, &biodomeInfo},
+    {Building::Type::OxygenTank, &oxygenTankInfo},
+    {Building::Type::HarvestStation, &harvestStationInfo},
+    {Building::Type::Refinery, &refineryInfo},
+    {Building::Type::ScienceLab, &scienceLabInfo}
   };
 
   Event::Info startEvent = Event::Info{
@@ -227,6 +247,7 @@ public:
 
   int GetResource(Resource res);
   void SetResource(Resource res, int amount);
+  void UpdateResource(Resource res, int amount);
   std::string GetResourceName(Resource res);
 
   bool TryToBuild(Building::Type building, int x, int y);
@@ -240,7 +261,7 @@ public:
   std::vector<std::string>& GetLog();
   void AddLog(const std::string &str);
 
-  std::map<Building::Type, Building::Info>& GetBuildingInfos() { return buildingInfos; }
+  std::map<Building::Type, Building::Info*>& GetBuildingInfos() { return buildingInfos; }
 
   int Rand(int a) const { return rand() % a + 1; }
   bool Every(int tickPeriod) const { return (tick % tickPeriod) == 0; }
