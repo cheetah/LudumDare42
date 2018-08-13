@@ -26,16 +26,16 @@ private:
   World *world;
   int step = 0;
   Event::Info *event = nullptr;
+  LocalCoordinates lc = LocalCoordinates([] (Point point) { return point + Point(150, 150); });
 public:
   ModalUI(World *world) : world(world) {
   }
 
   void Interact(Input *input) override {
+    if(!world->HasEvent()) return;
+
     step = world->GetCurrentEventStep();
     event = world->GetCurrentEvent();
-    if(event == nullptr) {
-      return;
-    }
 
     int index = 1;
     for(const auto& choice : event->steps[step].choices) {
@@ -48,15 +48,7 @@ public:
   }
 
   void Render() override {
-    step = world->GetCurrentEventStep();
-    event = world->GetCurrentEvent();
-    if(event == nullptr) {
-      return;
-    }
-
-    LocalCoordinates lc([] (Point point) {
-      return point + Point(150, 150);
-    });
+    if(!world->HasEvent()) return;
 
     Color oldDrawColor = render.GetDrawColor();
 
