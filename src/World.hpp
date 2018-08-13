@@ -7,6 +7,7 @@
 #include <map>
 
 #include <SDL2pp/Rect.hh>
+#include <SDL2pp/Color.hh>
 #include "Object.hpp"
 
 namespace Tile {
@@ -96,11 +97,13 @@ namespace Event {
     Null,
     Start,
     Win,
-    Lose
+    Lose,
+    Magnetic
   };
 
   struct Step {
     std::string text;
+    std::map<Resource, int> diff;
     std::map<int, std::string> choices;
   };
 
@@ -115,6 +118,9 @@ private:
   static const int SIZE = 8;
   static const int DAY_DURATION = 60;
   static const int OXYGEN_TANK_CAPACITY = 1000;
+
+  SDL2pp::Color NORMAL_TEXT   = SDL2pp::Color(0, 0, 0);
+  SDL2pp::Color DISABLED_TEXT = SDL2pp::Color(90, 90, 90);
 
   std::array<std::array<Tile::Type, SIZE>, SIZE> foundation = {Tile::Type::Null};
 
@@ -198,8 +204,9 @@ private:
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
         .text = "You are the head of research group, based on asteroid belt. Finally you and your group reached perspective asteroid, and prepared to set up camp. Maybe you made a mistake in the calculations or something else happened, but the surface could not stand the landing of you ship. You have a few resource, some scientific equipment, but land is actually falls down. Help will arrive in about 10 days. Can you survive and save your crew and scientific data? You have to build buildings, gather resources and make decisions, but remember, at any moment everything can collapse.\n\n(Use alpha keys to select answer)",
+        .diff = std::map<Resource, int>{},
         .choices = std::map<int, std::string>{
-          {1, "Start game"}
+          {-1, "Start game"}
         }
       }}
     }
@@ -210,8 +217,9 @@ private:
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
         .text = "Congratulations, you won! Help is finally arrived, people grabs their research data and climbs to the rescue drones.\n\n{} days on asteroid\n{} people rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
+        .diff = std::map<Resource, int>{},
         .choices = std::map<int, std::string>{
-          {1, "Restart game"}
+          {-1, "Restart game"}
         }
       }}
     }
@@ -222,10 +230,56 @@ private:
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
         .text = "Sorry, but there are no people left. You lost.\n\n{} days on asteroid\n{} people rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
+        .diff = std::map<Resource, int>{},
         .choices = std::map<int, std::string>{
-          {1, "Restart game"}
+          {-1, "Restart game"}
         }
       }}
+    }
+  };
+
+  Event::Info magneticEvent = Event::Info{
+    .type = Event::Type::Magnetic,
+    .steps = std::map<int, Event::Step>{
+      {
+        0,
+        Event::Step{
+          .text = "You are getting closer to an asteroid with huge magnetic field. There is a threat that an asteroid will destroy part of your colony.",
+          .diff = std::map<Resource, int>{},
+          .choices = std::map<int, std::string>{
+            {1, "Make calculations and try to neutralize the effect of the magnetic field (-10 science)"},
+            {2, "Reinforce buildings (-20 minerals)"},
+            {3, "Ignore the threat"},
+          }
+        }
+      }, {
+        1,
+        Event::Step{
+          .text = "Сalculations were made correctly and the threat was over. Also, you have a chance to collect some gas. (+20 gas)",
+          .diff = std::map<Resource, int>{ {Resource::Science, -10}, {Resource::Gas, 20} },
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        2,
+        Event::Step{
+          .text = "Your team did a good job. Danger has passed.",
+          .diff = std::map<Resource, int>{ {Resource::Minerals, -20} },
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        3,
+        Event::Step{
+          .text = "Unfortunately most of your settlement is destroyed.",
+          .diff = std::map<Resource, int>{},
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }
     }
   };
 
@@ -233,6 +287,7 @@ private:
     {Event::Type::Start, &startEvent},
     {Event::Type::Win, &winEvent},
     {Event::Type::Lose, &loseEvent},
+    {Event::Type::Magnetic, &magneticEvent},
   };
 public:
   World();
@@ -258,8 +313,8 @@ public:
 
   bool HasEvent() const { return (currentEvent != nullptr); }
   void EmitEvent(Event::Type type);
-  void HandleStepEvent(int step);
-  std::string GetEventText();
+  bool HandleStepEvent(int step);
+  std::vector<std::pair<std::string, SDL2pp::Color>> GetEventText();
   int GetCurrentEventStep() const { return currentEventStep; }
   Event::Info* GetCurrentEvent() const { return currentEvent; }
 

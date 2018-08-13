@@ -78,6 +78,10 @@ void World::Tick() {
     }
   }
 
+  if(Every(5)) {
+    EmitEvent(Event::Type::Magnetic);
+  }
+
   if(Every(10) && Rand(10) > 4) {
     int randomX = Rand(8) - 1;
     int randomY = Rand(8) - 1;
@@ -198,50 +202,69 @@ void World::EmitEvent(Event::Type type) {
   currentEvent = eventInfos[type];
 }
 
-void World::HandleStepEvent(int step) {
-  if(currentEvent == nullptr) {
-    return;
+bool World::HandleStepEvent(int step) {
+  if(currentEvent == nullptr) return false;
+
+  if(step == -1) {
+    switch(currentEvent->type) {
+    case Event::Type::Win:
+    case Event::Type::Lose:
+      Initialize();
+      break;
+    default:
+      currentEventStep = 0;
+      currentEvent = nullptr;
+      break;
+    }
+
+    return true;
   }
 
-  switch(currentEvent->type) {
-  case Event::Type::Start:
-    currentEvent = nullptr;
-    break;
-  case Event::Type::Win:
-  case Event::Type::Lose:
-    Initialize();
-    break;
-  default:
-    break;
+  for(const auto& res : currentEvent->steps[step].diff) {
+    if(res.second < 0 && GetResource(res.first) < -res.second) return false;
   }
+
+  for(const auto& res : currentEvent->steps[step].diff) {
+    UpdateResource(res.first, res.second);
+  }
+
+  currentEventStep = step;
+  return true;
 }
 
-std::string World::GetEventText() {
-  std::string text;
-  auto step = currentEvent->steps[currentEventStep];
+std::vector<std::pair<std::string, SDL2pp::Color>> World::GetEventText() {
+  std::vector<std::pair<std::string, SDL2pp::Color>> text;
 
+  auto step = currentEvent->steps[currentEventStep];
   switch(currentEvent->type) {
-  case Event::Type::Start:
-    text.append(step.text);
-    break;
   case Event::Type::Win:
   case Event::Type::Lose:
-    text.append(fmt::format(step.text,
+    text.push_back(std::make_pair(fmt::format(step.text,
       tick / DAY_DURATION + 1,
       GetResource(Resource::Peoples),
       totalResources[Resource::Minerals],
       totalResources[Resource::Gas],
       totalResources[Resource::Science]
-    ));
+    ), NORMAL_TEXT));
     break;
   default:
+    text.push_back(std::make_pair(step.text, NORMAL_TEXT));
     break;
   }
 
-  text.append("\n\n");
+  text.push_back(std::make_pair("\n", NORMAL_TEXT));
   int index = 1;
   for(const auto& choice : step.choices) {
-    text.append(fmt::format("    {}. {}\n", index, choice.second));
+    auto textColor = NORMAL_TEXT;
+
+    for(const auto& res : currentEvent->steps[choice.first].diff) {
+      if(res.second < 0 && GetResource(res.first) < -res.second) {
+        textColor = DISABLED_TEXT;
+        break;
+      }
+    }
+
+    text.push_back(std::make_pair(fmt::format("    {}. {}", index, choice.second), textColor));
     index++;
   }
 

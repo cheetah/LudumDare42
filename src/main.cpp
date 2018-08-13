@@ -59,7 +59,20 @@ public:
     render.SetDrawColor(Color(192, 192, 192));
     render.FillRect(Rect(lc.t(Point(2, 2)), Point(696, 396)));
 
-    font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(676, 376)), "%s", world->GetEventText().c_str());
+    auto height = 0;
+    for(const auto& text : world->GetEventText()) {
+      font.drawBox(
+        render.Get(),
+        Rect(lc.t(Point(12, 12 + height)), Point(676, 376 - height)),
+        text.second,
+        "%s",
+        text.first.c_str()
+      );
+
+      height += font.getColumnHeight(676, "%s", text.first.c_str());
+    }
+
+    // font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(676, 376)), "%s", world->GetEventText().c_str());
 
     render.SetDrawColor(oldDrawColor);
   }
