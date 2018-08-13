@@ -131,7 +131,7 @@ private:
   Event::Info *currentEvent = nullptr;
 
   std::map<Resource, std::string> resourceNames = {
-    {Resource::Peoples, "peoples"},
+    {Resource::Peoples, "people"},
     {Resource::Food, "food"},
     {Resource::Oxygen, "oxygen"},
     {Resource::Minerals, "minerals"},
@@ -209,7 +209,7 @@ private:
     .type = Event::Type::Win,
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
-        .text = "Congratulations, you won! Help is finally arrived, people grabs their research data and climbs to the rescue drones.\n\n{} days on asteroid\n{} peoples rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
+        .text = "Congratulations, you won! Help is finally arrived, people grabs their research data and climbs to the rescue drones.\n\n{} days on asteroid\n{} people rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
         .choices = std::map<int, std::string>{
           {1, "Restart game"}
         }
@@ -221,7 +221,7 @@ private:
     .type = Event::Type::Lose,
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
-        .text = "Sorry, but there are no people left. You lost.\n\n{} days on asteroid\n{} peoples rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
+        .text = "Sorry, but there are no people left. You lost.\n\n{} days on asteroid\n{} people rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
         .choices = std::map<int, std::string>{
           {1, "Restart game"}
         }

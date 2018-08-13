@@ -202,7 +202,7 @@ public:
     font.drawBox(
       render.Get(),
       Rect(lc.t(Point(12, 12)), Point(80, 96)),
-      "Peoples:\nFood:\nOxygen:\nMinerals:\nGas:\nScience:"
+      "People:\nFood:\nOxygen:\nMinerals:\nGas:\nScience:"
     );
 
     font.drawBox(

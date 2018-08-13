@@ -140,7 +140,7 @@ std::string World::GetResourceName(Resource res) { return resourceNames[res]; }
 void World::UpdateResource(Resource res, int amount) { SetResource(res, GetResource(res) + amount); }
 void World::SetResource(Resource res, int amount) {
   if(resources[res] < amount) {
-    totalResources[res] += amount;
+    totalResources[res] += amount - resources[res];
   }
 
   resources[res] = amount;
