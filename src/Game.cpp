@@ -10,7 +10,7 @@ Game::Game() :
   sdl(SDL_INIT_VIDEO),
   image(IMG_INIT_PNG),
   window(
-    "Dying Planet",
+    "Asteroid",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     1000,
