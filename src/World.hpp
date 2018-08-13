@@ -170,7 +170,7 @@ private:
   Building::Info harvestStationInfo = Building::Info{
     .type = Building::Type::HarvestStation,
     .name = "Harvest Station",
-    .description = "Can be placed only on mineral tile. Mines minerals.",
+    .description = "Can be placed only on mineral tile. Extracts minerals.",
     .cost = std::map<Resource, int>{ {Resource::Minerals, 10} },
     .production = std::map<Resource, int>{ {Resource::Minerals, 5} },
     .placementTiles = std::vector<Tile::Type>{ Tile::Type::Minerals }
@@ -206,7 +206,7 @@ private:
     .type = Event::Type::Start,
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
-        .text = "You are the head of research group, based on asteroid belt. Finally you and your group reached perspective asteroid, and prepared to set up camp. Maybe you made a mistake in the calculations or something else happened, but the surface could not stand the landing of you ship. You have a few resource, some scientific equipment, but land is actually falls down. Help will arrive in about 10 days. Can you survive and save your crew and scientific data? You have to build buildings, gather resources and make decisions, but remember, at any moment everything can collapse.\n\n(Use alpha keys to select answer)",
+        .text = "You are the head of research group, based on asteroid belt. Finally you and your group reached perspective asteroid, and prepared to set up camp. Maybe you made a mistake in the calculations or something else happened, but the surface could not stand the landing of you ship. You have a few resource, some scientific equipment, but land is literally falls down. Help will arrive in about 10 days. Can you survive and save your crew and scientific data? You have to build buildings, gather resources and make decisions, but remember, at any moment everything can collapse.\n\n(Use alpha keys to select answer)",
         .diff = std::map<Resource, int>{},
         .choices = std::map<int, std::string>{
           {-1, "Start game"}
@@ -261,7 +261,7 @@ private:
       }, {
         1,
         Event::Step{
-          .text = "Сalculations were made correctly and the threat was over. Also, you have a chance to collect some gas. (+20 gas)",
+          .text = "Calculations were made correctly and the threat was over. Also, you have a chance to collect some gas. (+20 gas)",
           .diff = std::map<Resource, int>{ {Resource::Science, -10}, {Resource::Gas, 20} },
           .ignoreCheck = false,
           .choices = std::map<int, std::string>{
@@ -281,7 +281,7 @@ private:
       }, {
         3,
         Event::Step{
-          .text = "Unfortunately most of your colony is destroyed.",
+          .text = "Unfortunately large part of your camp is destroyed.",
           .diff = std::map<Resource, int>{ {Resource::Tiles, -20} },
           .ignoreCheck = true,
           .choices = std::map<int, std::string>{
