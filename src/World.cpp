@@ -79,7 +79,7 @@ void World::Tick() {
     }
   }
 
-  if(Every(20) && Rand(10) > 4) {
+  if(Every(20) && Rand(10) > 5) {
     std::random_shuffle(randomEvents.begin(), randomEvents.end());
     EmitEvent(*randomEvents.begin());
   }
@@ -228,6 +228,7 @@ void World::RemoveBuilding(int x, int y) {
 void World::EmitEvent(Event::Type type) {
   currentEventStep = 0;
   currentEvent = eventInfos[type];
+  HandleStepEvent(currentEventStep);
 }
 
 bool World::HandleStepEvent(int step) {

@@ -99,7 +99,11 @@ namespace Event {
     Start,
     Win,
     Lose,
-    Magnetic
+    Magnetic,
+    Toxic,
+    Flare,
+    Radio,
+    SpoiledFood,
   };
 
   struct Step {
@@ -292,15 +296,198 @@ private:
     }
   };
 
+  Event::Info toxicEvent = Event::Info{
+    .type = Event::Type::Toxic,
+    .steps = std::map<int, Event::Step>{
+      {
+        0,
+        Event::Step{
+          .text = "It looks like toxic fallout starts soon. Buildings and scientific equipment can be damaged.",
+          .diff = std::map<Resource, int>{},
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {1, "Protect buildings (-10 minerals -5 science)"},
+            {2, "Construct a collector to refine toxic substances (-50 minerals)"},
+            {3, "Ignore"}
+          }
+        }
+      }, {
+        1,
+        Event::Step{
+          .text = "It worked. All your stuff are safe.",
+          .diff = std::map<Resource, int>{ {Resource::Minerals, -10}, {Resource::Science, -5} },
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        2,
+        Event::Step{
+          .text = "Excellent work, you collected 70 gas.",
+          .diff = std::map<Resource, int>{ {Resource::Minerals, -50}, {Resource::Gas, 70} },
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        3,
+        Event::Step{
+          .text = "Toxic fallout caused leak in oxygen tanks. You lost 700 oxygen.",
+          .diff = std::map<Resource, int>{ {Resource::Oxygen, -700} },
+          .ignoreCheck = true,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }
+    }
+  };
+
+  Event::Info flareEvent = Event::Info{
+    .type = Event::Type::Flare,
+    .steps = std::map<int, Event::Step>{
+      {
+        0,
+        Event::Step{
+          .text = "Our scientists expecting solar flare. High temperature can be dangerous for our camp.",
+          .diff = std::map<Resource, int>{},
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {1, "Construct heat shield (-50 minerals)"},
+            {2, "Reconfigure life support systems to compensate high temperature (-10 science)"},
+            {3, "Ignore"}
+          }
+        }
+      }, {
+        1,
+        Event::Step{
+          .text = "You construct a heat shield and survive a solar flare without incident.",
+          .diff = std::map<Resource, int>{ {Resource::Minerals, -50} },
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        2,
+        Event::Step{
+          .text = "Life support systems compensates high temperature.",
+          .diff = std::map<Resource, int>{ {Resource::Science, -10} },
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        3,
+        Event::Step{
+          .text = "High temperature provokes gas explosion. You lost 50 gas and 6 people were killed by the explosion.",
+          .diff = std::map<Resource, int>{ {Resource::Gas, -50}, {Resource::Peoples, -6} },
+          .ignoreCheck = true,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }
+    }
+  };
+
+  Event::Info radioEvent = Event::Info{
+    .type = Event::Type::Radio,
+    .steps = std::map<int, Event::Step>{
+      {
+        0,
+        Event::Step{
+          .text = "One of your scientists offers to construct a transmitter. He says that transmitter will help rescue mission to find our position and will reduce their arrival time.",
+          .diff = std::map<Resource, int>{},
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {1, "Agree with him (-30 minerals, -30 gas, -15 science)"},
+            {2, "Ignore him"},
+            {3, "Explain that construction is unable due to lack of resources."}
+          }
+        }
+      }, {
+        1,
+        Event::Step{
+          .text = "You are starting communication session with rescue mission by new transmitter. They are very happy to hear you, and promises to reach you as soon as possible. (-3 days until eacuation)",
+          .diff = std::map<Resource, int>{ {Resource::Minerals, -30}, {Resource::Gas, -30}, {Resource::Science, -15}, {Resource::DaysUntilEvacuation, -3} },
+          .ignoreCheck = false,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        2,
+        Event::Step{
+          .text = "The scientist is very upset. He leaves your cabinet. Some time later you receiving report that he is missing.",
+          .diff = std::map<Resource, int>{ {Resource::Peoples, -1} },
+          .ignoreCheck = true,
+          .choices = {
+            {-1, "Continue"}
+          }
+        }
+      }, {
+        3,
+        Event::Step{
+          .text = "The scientist suggests to fund him some minerals to start work, and to return to construction later.",
+          .diff = std::map<Resource, int>{},
+          .ignoreCheck = false,
+          .choices = {
+            {4, "Approve his proposal (-5 minerals)"},
+            {2, "Ignore him"},
+          }
+        }
+      }, {
+        4,
+        Event::Step{
+          .text = "You sign his papers. He leaves satisfied.",
+          .diff = std::map<Resource, int>{ {Resource::Minerals, -5} },
+          .ignoreCheck = false,
+          .choices = {
+            {-1, "Continue"}
+          }
+        }
+      }
+    }
+  };
+
+  Event::Info spoiledFoodEvent = Event::Info{
+    .type = Event::Type::SpoiledFood,
+    .steps = std::map<int, Event::Step>{
+      {
+        0,
+        Event::Step{
+          .text = "An unknown mold has affected part of your food. You decide to throw it away and lost 50 food.",
+          .diff = std::map<Resource, int>{ {Resource::Food, -50} },
+          .ignoreCheck = true,
+          .choices = std::map<int, std::string>{
+            {-1, "Continue"}
+          }
+        }
+      }
+    }
+  };
+
   std::map<Event::Type, Event::Info*> eventInfos = {
     {Event::Type::Start, &startEvent},
     {Event::Type::Win, &winEvent},
     {Event::Type::Lose, &loseEvent},
     {Event::Type::Magnetic, &magneticEvent},
+    {Event::Type::Toxic, &toxicEvent},
+    {Event::Type::Flare, &flareEvent},
+    {Event::Type::Radio, &radioEvent},
+    {Event::Type::SpoiledFood, &spoiledFoodEvent},
   };
 
   std::vector<Event::Type> randomEvents = {
     Event::Type::Magnetic,
+    Event::Type::Toxic,
+    Event::Type::Flare,
+    Event::Type::Radio,
+    Event::Type::SpoiledFood,
   };
 public:
   World();

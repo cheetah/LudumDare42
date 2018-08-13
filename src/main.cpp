@@ -72,8 +72,6 @@ public:
       height += font.getColumnHeight(676, "%s", text.first.c_str());
     }
 
-    // font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(676, 376)), "%s", world->GetEventText().c_str());
-
     render.SetDrawColor(oldDrawColor);
   }
 };
