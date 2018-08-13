@@ -281,8 +281,8 @@ private:
       }, {
         3,
         Event::Step{
-          .text = "Unfortunately most of your settlement is destroyed.",
-          .diff = std::map<Resource, int>{ {Resource::Tiles, -70} },
+          .text = "Unfortunately most of your colony is destroyed.",
+          .diff = std::map<Resource, int>{ {Resource::Tiles, -20} },
           .ignoreCheck = true,
           .choices = std::map<int, std::string>{
             {-1, "Continue"}
@@ -297,6 +297,10 @@ private:
     {Event::Type::Win, &winEvent},
     {Event::Type::Lose, &loseEvent},
     {Event::Type::Magnetic, &magneticEvent},
+  };
+
+  std::vector<Event::Type> randomEvents = {
+    Event::Type::Magnetic,
   };
 public:
   World();

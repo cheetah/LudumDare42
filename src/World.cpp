@@ -79,8 +79,9 @@ void World::Tick() {
     }
   }
 
-  if(Every(5)) {
-    EmitEvent(Event::Type::Magnetic);
+  if(Every(20) && Rand(10) > 4) {
+    std::random_shuffle(randomEvents.begin(), randomEvents.end());
+    EmitEvent(*randomEvents.begin());
   }
 
   if(Every(10) && Rand(10) > 4) {
