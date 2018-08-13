@@ -14,19 +14,20 @@ void World::Initialize() {
   currentEventStep = 0;
   Event::Info *currentEvent = nullptr;
 
+  buildings.clear();
+  worldLog.clear();
   totalResources.clear();
+
+  Generate();
+
   SetResource(Resource::Peoples,             50);
   SetResource(Resource::Food,                50);
-  SetResource(Resource::Oxygen,              100);
+  SetResource(Resource::Oxygen,              700);
   SetResource(Resource::Minerals,            30);
   SetResource(Resource::Gas,                 0);
   SetResource(Resource::Science,             0);
   SetResource(Resource::DaysUntilEvacuation, 10);
 
-  buildings.clear();
-  worldLog.clear();
-
-  Generate();
   EmitEvent(Event::Type::Start);
   AddLog("Game has been started");
 }
@@ -148,7 +149,7 @@ void World::SetResource(Resource res, int amount) {
   }
 
   if(res == Resource::Oxygen) {
-    int maxOxygen = OXYGEN_TANK_CAPACITY * std::count (buildings.begin(), buildings.end(), Building::Type::OxygenTank);
+    int maxOxygen = OXYGEN_TANK_CAPACITY * std::count(buildings.begin(), buildings.end(), Building::Type::OxygenTank);
     if(resources[Resource::Oxygen] > maxOxygen) {
       resources[Resource::Oxygen] = maxOxygen;
     }
