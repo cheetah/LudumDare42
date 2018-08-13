@@ -113,7 +113,7 @@ namespace Event {
 class World : Object {
 private:
   static const int SIZE = 8;
-  static const int DAY_DURATION = 120;
+  static const int DAY_DURATION = 60;
 
   std::array<std::array<Tile::Type, SIZE>, SIZE> foundation = {Tile::Type::Null};
 
@@ -258,6 +258,7 @@ public:
   int GetCurrentEventStep() const { return currentEventStep; }
   Event::Info* GetCurrentEvent() const { return currentEvent; }
 
+  std::string GetStatus();
   std::vector<std::string>& GetLog();
   void AddLog(const std::string &str);
 

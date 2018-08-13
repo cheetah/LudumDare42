@@ -86,7 +86,7 @@ void World::Tick() {
     }
 
     foundation[randomX][randomY] = Tile::Type::Null;
-    AddLog("oh no, another one piece of ground has been fall");
+    AddLog("Oh no, another one piece of ground has been fall");
   }
 
   int currentPeoples = GetResource(Resource::Peoples);
@@ -160,12 +160,18 @@ bool World::TryToBuild(Building::Type building, int x, int y) {
   auto tiles = buildingInfos[building]->placementTiles;
   if(!tiles.empty()) {
     auto found = std::find(std::begin(tiles), std::end(tiles), foundation[x][y]);
-    if(found == std::end(tiles)) return false;
+    if(found == std::end(tiles)) {
+      AddLog("Can't build on this tile");
+      return false;
+    }
   }
 
   auto cost = buildingInfos[building]->cost;
   for(const auto& res : cost) {
-    if(GetResource(res.first) < res.second) return false;
+    if(GetResource(res.first) < res.second) {
+      AddLog(fmt::format("Insufficient {}", GetResourceName(res.first)));
+      return false;
+    }
   }
 
   for(const auto& res : cost) UpdateResource(res.first, -res.second);
@@ -195,6 +201,15 @@ void World::HandleStepEvent(int step) {
   default:
     break;
   }
+}
+
+std::string World::GetStatus() {
+  return fmt::format(
+    "{}:00, Day {}, {} days until evacuation",
+    std::floor((tick % DAY_DURATION) / (DAY_DURATION / 24.0)),
+    tick / DAY_DURATION + 1,
+    GetResource(Resource::DaysUntilEvacuation)
+  );
 }
 
 std::vector<std::string>& World::GetLog() { return worldLog; }

@@ -145,7 +145,7 @@ public:
     Color oldDrawColor = render.GetDrawColor();
 
     if(hoveredBuilding == info->type) {
-      render.SetDrawColor(Color(255, 0, 0));
+      render.SetDrawColor(Color(0, 0, 255));
     } else {
       render.SetDrawColor(Color(0, 0, 0));
     }
@@ -235,9 +235,9 @@ public:
 
     font.drawBox(
       render.Get(),
-      Rect(lc.t(Point(144, 12)), Point(160, 96)),
-      "%d days until evacuation",
-      world->GetResource(Resource::DaysUntilEvacuation)
+      Rect(lc.t(Point(144, 12)), Point(400, 96)),
+      "%s",
+      world->GetStatus().c_str()
     );
 
     std::string fullLog;
