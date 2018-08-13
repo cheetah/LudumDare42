@@ -26,7 +26,7 @@ private:
   World *world;
   int step = 0;
   Event::Info *event = nullptr;
-  LocalCoordinates lc = LocalCoordinates([] (Point point) { return point + Point(150, 150); });
+  LocalCoordinates lc = LocalCoordinates([] (Point point) { return point + Point(100, 147); });
 public:
   ModalUI(World *world) : world(world) {
   }
@@ -214,13 +214,13 @@ public:
 
     font.drawBox(
       render.Get(),
-      Rect(lc.t(Point(12, 12)), Point(80, 96)),
+      Rect(lc.t(Point(424, 12)), Point(80, 96)),
       "People:\nFood:\nOxygen:\nMinerals:\nGas:\nScience:"
     );
 
     font.drawBox(
       render.Get(),
-      Rect(lc.t(Point(92, 12)), Point(40, 96)),
+      Rect(lc.t(Point(504, 12)), Point(40, 96)),
       "%d\n%d\n%d\n%d\n%d\n%d",
       world->GetResource(Resource::Peoples),
       world->GetResource(Resource::Food),
@@ -232,7 +232,7 @@ public:
 
     font.drawBox(
       render.Get(),
-      Rect(lc.t(Point(144, 12)), Point(400, 96)),
+      Rect(lc.t(Point(12, 12)), Point(400, 96)),
       "%s",
       world->GetStatus().c_str()
     );
@@ -242,7 +242,7 @@ public:
       fullLog.append(logItem);
       fullLog.append("\n");
     }
-    font.drawBox(render.Get(), Rect(lc.t(Point(144, 40)), Point(400, 176)), "%s", fullLog.c_str());
+    font.drawBox(render.Get(), Rect(lc.t(Point(12, 40)), Point(400, 176)), "%s", fullLog.c_str());
 
     render.SetDrawColor(oldDrawColor);
   }
