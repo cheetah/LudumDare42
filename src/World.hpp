@@ -47,6 +47,7 @@ enum class Resource {
   Gas,
   Science,
   DaysUntilEvacuation,
+  Tiles,
 };
 
 namespace Building {
@@ -104,6 +105,7 @@ namespace Event {
   struct Step {
     std::string text;
     std::map<Resource, int> diff;
+    bool ignoreCheck;
     std::map<int, std::string> choices;
   };
 
@@ -144,6 +146,7 @@ private:
     {Resource::Gas, "gas"},
     {Resource::Science, "science"},
     {Resource::DaysUntilEvacuation, "days until evacuation"},
+    {Resource::Tiles, "tiles"},
   };
 
   Building::Info biodomeInfo = Building::Info{
@@ -218,6 +221,7 @@ private:
       {0, Event::Step{
         .text = "Congratulations, you won! Help is finally arrived, people grabs their research data and climbs to the rescue drones.\n\n{} days on asteroid\n{} people rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
         .diff = std::map<Resource, int>{},
+        .ignoreCheck = false,
         .choices = std::map<int, std::string>{
           {-1, "Restart game"}
         }
@@ -231,6 +235,7 @@ private:
       {0, Event::Step{
         .text = "Sorry, but there are no people left. You lost.\n\n{} days on asteroid\n{} people rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
         .diff = std::map<Resource, int>{},
+        .ignoreCheck = false,
         .choices = std::map<int, std::string>{
           {-1, "Restart game"}
         }
@@ -246,6 +251,7 @@ private:
         Event::Step{
           .text = "You are getting closer to an asteroid with huge magnetic field. There is a threat that an asteroid will destroy part of your colony.",
           .diff = std::map<Resource, int>{},
+          .ignoreCheck = false,
           .choices = std::map<int, std::string>{
             {1, "Make calculations and try to neutralize the effect of the magnetic field (-10 science)"},
             {2, "Reinforce buildings (-20 minerals)"},
@@ -257,6 +263,7 @@ private:
         Event::Step{
           .text = "Сalculations were made correctly and the threat was over. Also, you have a chance to collect some gas. (+20 gas)",
           .diff = std::map<Resource, int>{ {Resource::Science, -10}, {Resource::Gas, 20} },
+          .ignoreCheck = false,
           .choices = std::map<int, std::string>{
             {-1, "Continue"}
           }
@@ -266,6 +273,7 @@ private:
         Event::Step{
           .text = "Your team did a good job. Danger has passed.",
           .diff = std::map<Resource, int>{ {Resource::Minerals, -20} },
+          .ignoreCheck = false,
           .choices = std::map<int, std::string>{
             {-1, "Continue"}
           }
@@ -274,7 +282,8 @@ private:
         3,
         Event::Step{
           .text = "Unfortunately most of your settlement is destroyed.",
-          .diff = std::map<Resource, int>{},
+          .diff = std::map<Resource, int>{ {Resource::Tiles, -70} },
+          .ignoreCheck = true,
           .choices = std::map<int, std::string>{
             {-1, "Continue"}
           }
@@ -302,6 +311,7 @@ public:
   SDL2pp::Rect GetTile(Tile::Type type) const { return Tile::Tiles[type]; }
   SDL2pp::Rect GetTile(Building::Type type) const { return Tile::Tiles[Building::Tiles[type]]; }
   std::array<std::array<Tile::Type, SIZE>, SIZE>& GetFoundation() { return foundation; }
+  void RemoveTile(int count);
 
   int GetResource(Resource res);
   void SetResource(Resource res, int amount);
@@ -314,6 +324,7 @@ public:
   bool HasEvent() const { return (currentEvent != nullptr); }
   void EmitEvent(Event::Type type);
   bool HandleStepEvent(int step);
+  bool CheckStepEvent(int step);
   std::vector<std::pair<std::string, SDL2pp::Color>> GetEventText();
   int GetCurrentEventStep() const { return currentEventStep; }
   Event::Info* GetCurrentEvent() const { return currentEvent; }

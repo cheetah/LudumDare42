@@ -27,6 +27,7 @@ void World::Initialize() {
   SetResource(Resource::Gas,                 0);
   SetResource(Resource::Science,             0);
   SetResource(Resource::DaysUntilEvacuation, 10);
+  resources[Resource::Tiles] =               64;
 
   EmitEvent(Event::Type::Start);
   AddLog("Game has been started");
@@ -83,12 +84,7 @@ void World::Tick() {
   }
 
   if(Every(10) && Rand(10) > 4) {
-    int randomX = Rand(8) - 1;
-    int randomY = Rand(8) - 1;
-
-    RemoveBuilding(randomX, randomY);
-    foundation[randomX][randomY] = Tile::Type::Null;
-
+    UpdateResource(Resource::Tiles, -1);
     AddLog("Oh no, another one piece of ground has been fall");
   }
 
@@ -139,10 +135,41 @@ void World::Tick() {
   SetResource(Resource::Oxygen, newOxygen);
 }
 
+void World::RemoveTile(int count) {
+  for(int i = 0; i < count; i++) {
+    int randomX, randomY;
+    auto tile = Tile::Type::Null;
+
+    bool hasTiles = false;
+    for(const auto& row : foundation) {
+      for(const auto& col : row) {
+        if(col != Tile::Type::Null) {
+          hasTiles = true;
+          break;
+        }
+      }
+    }
+
+    while(tile == Tile::Type::Null && hasTiles) {
+      randomX = Rand(8) - 1;
+      randomY = Rand(8) - 1;
+      tile = foundation[randomX][randomY];
+    }
+
+    if(tile != Tile::Type::Null) {
+      RemoveBuilding(randomX, randomY);
+      foundation[randomX][randomY] = Tile::Type::Null;
+    }
+  }
+}
+
 int World::GetResource(Resource res) { return resources[res]; }
 std::string World::GetResourceName(Resource res) { return resourceNames[res]; }
 void World::UpdateResource(Resource res, int amount) { SetResource(res, GetResource(res) + amount); }
 void World::SetResource(Resource res, int amount) {
+  if(res == Resource::Tiles && amount > resources[res]) return;
+  if(res == Resource::Tiles) RemoveTile(resources[res] - amount);
+
   if(resources[res] < amount) {
     totalResources[res] += amount - resources[res];
   }
@@ -220,15 +247,24 @@ bool World::HandleStepEvent(int step) {
     return true;
   }
 
-  for(const auto& res : currentEvent->steps[step].diff) {
-    if(res.second < 0 && GetResource(res.first) < -res.second) return false;
-  }
-
+  if(!CheckStepEvent(step)) return false;
   for(const auto& res : currentEvent->steps[step].diff) {
     UpdateResource(res.first, res.second);
   }
 
   currentEventStep = step;
+  return true;
+}
+
+bool World::CheckStepEvent(int step) {
+  if(!currentEvent->steps[step].ignoreCheck) {
+    for(const auto& res : currentEvent->steps[step].diff) {
+      if(res.second < 0 && GetResource(res.first) < -res.second) {
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -255,15 +291,7 @@ std::vector<std::pair<std::string, SDL2pp::Color>> World::GetEventText() {
   text.push_back(std::make_pair("\n", NORMAL_TEXT));
   int index = 1;
   for(const auto& choice : step.choices) {
-    auto textColor = NORMAL_TEXT;
-
-    for(const auto& res : currentEvent->steps[choice.first].diff) {
-      if(res.second < 0 && GetResource(res.first) < -res.second) {
-        textColor = DISABLED_TEXT;
-        break;
-      }
-    }
-
+    auto textColor = CheckStepEvent(choice.first) ? NORMAL_TEXT : DISABLED_TEXT;
     text.push_back(std::make_pair(fmt::format("    {}. {}", index, choice.second), textColor));
     index++;
   }
