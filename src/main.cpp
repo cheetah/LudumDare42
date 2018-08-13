@@ -48,6 +48,8 @@ public:
   }
 
   void Render() override {
+    step = world->GetCurrentEventStep();
+    event = world->GetCurrentEvent();
     if(event == nullptr) {
       return;
     }
@@ -65,17 +67,7 @@ public:
     render.SetDrawColor(Color(192, 192, 192));
     render.FillRect(Rect(lc.t(Point(2, 2)), Point(696, 396)));
 
-    std::string fullText = "";
-    fullText.append(event->steps[0].text.c_str());
-    fullText.append("\n\n");
-
-    int index = 1;
-    for(const auto& choice : event->steps[step].choices) {
-      fullText.append(fmt::format("    {}. {}\n", index, choice.second));
-      index++;
-    }
-
-    font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(676, 376)), "%s", fullText.c_str());
+    font.drawBox(render.Get(), Rect(lc.t(Point(12, 12)), Point(676, 376)), "%s", world->GetEventText().c_str());
 
     render.SetDrawColor(oldDrawColor);
   }
@@ -261,12 +253,6 @@ public:
   FoundationUI(World *world) : world(world) {
   }
 
-  void Interact(Input *input) override {
-    if(input->Keyboard()->KeyTriggered(SDL_SCANCODE_R)) {
-      world->Generate();
-    }
-  }
-
   void Render() override {
     auto &tiles = world->GetFoundation();
     for(const auto& tileRow : tiles) {
@@ -294,7 +280,7 @@ int main() {
     World world;
     FoundationUI fui(&world);
     ResourceUI rui(&world);
-    BuildUI ui(&world);
+    BuildUI bui(&world);
     ModalUI mui(&world);
 
   #ifdef __EMSCRIPTEN__

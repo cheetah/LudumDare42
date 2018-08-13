@@ -6,19 +6,22 @@ World::World() {
 }
 
 void World::Initialize() {
+  srand(time(nullptr));
+
   tick = 0;
   elapsedFromTick = 0.0;
 
   currentEventStep = 0;
   Event::Info *currentEvent = nullptr;
 
-  resources[Resource::Peoples]  = 50;
-  resources[Resource::Food]     = 50;
-  resources[Resource::Oxygen]   = 100;
-  resources[Resource::Minerals] = 30;
-  resources[Resource::Gas]      = 0;
-  resources[Resource::Science]  = 0;
-  resources[Resource::DaysUntilEvacuation] = 10;
+  totalResources.clear();
+  SetResource(Resource::Peoples,             50);
+  SetResource(Resource::Food,                50);
+  SetResource(Resource::Oxygen,              100);
+  SetResource(Resource::Minerals,            30);
+  SetResource(Resource::Gas,                 0);
+  SetResource(Resource::Science,             0);
+  SetResource(Resource::DaysUntilEvacuation, 10);
 
   buildings.clear();
   worldLog.clear();
@@ -74,18 +77,13 @@ void World::Tick() {
     }
   }
 
-  if(Every(10) && Rand(10) > 8) {
+  if(Every(10) && Rand(10) > 4) {
     int randomX = Rand(8) - 1;
     int randomY = Rand(8) - 1;
-    auto tile = foundation[randomX][randomY];
-    if(Building::ReverseTiles[tile] != Building::Type::Null) {
-      buildings.erase(std::find(buildings.begin(), buildings.end(), Building::ReverseTiles[tile]));
-      if(Building::ReverseTiles[tile] == Building::Type::OxygenTank) {
-        SetResource(Resource::Oxygen, GetResource(Resource::Oxygen));
-      }
-    }
 
+    RemoveBuilding(randomX, randomY);
     foundation[randomX][randomY] = Tile::Type::Null;
+
     AddLog("Oh no, another one piece of ground has been fall");
   }
 
@@ -140,13 +138,17 @@ int World::GetResource(Resource res) { return resources[res]; }
 std::string World::GetResourceName(Resource res) { return resourceNames[res]; }
 void World::UpdateResource(Resource res, int amount) { SetResource(res, GetResource(res) + amount); }
 void World::SetResource(Resource res, int amount) {
+  if(resources[res] < amount) {
+    totalResources[res] += amount;
+  }
+
   resources[res] = amount;
   if(resources[res] < 0) {
     resources[res] = 0;
   }
 
   if(res == Resource::Oxygen) {
-    int maxOxygen = 1000 * std::count (buildings.begin(), buildings.end(), Building::Type::OxygenTank);
+    int maxOxygen = OXYGEN_TANK_CAPACITY * std::count (buildings.begin(), buildings.end(), Building::Type::OxygenTank);
     if(resources[Resource::Oxygen] > maxOxygen) {
       resources[Resource::Oxygen] = maxOxygen;
     }
@@ -174,10 +176,20 @@ bool World::TryToBuild(Building::Type building, int x, int y) {
     }
   }
 
+  RemoveBuilding(x, y);
   for(const auto& res : cost) UpdateResource(res.first, -res.second);
   buildings.push_back(building);
   foundation[x][y] = Building::Tiles[building];
   return true;
+}
+
+void World::RemoveBuilding(int x, int y) {
+  if(Building::ReverseTiles[foundation[x][y]] != Building::Type::Null) {
+    buildings.erase(std::find(buildings.begin(), buildings.end(), Building::ReverseTiles[foundation[x][y]]));
+    if(Building::ReverseTiles[foundation[x][y]] == Building::Type::OxygenTank) {
+      SetResource(Resource::Oxygen, GetResource(Resource::Oxygen));
+    }
+  }
 }
 
 void World::EmitEvent(Event::Type type) {
@@ -201,6 +213,38 @@ void World::HandleStepEvent(int step) {
   default:
     break;
   }
+}
+
+std::string World::GetEventText() {
+  std::string text;
+  auto step = currentEvent->steps[currentEventStep];
+
+  switch(currentEvent->type) {
+  case Event::Type::Start:
+    text.append(step.text);
+    break;
+  case Event::Type::Win:
+  case Event::Type::Lose:
+    text.append(fmt::format(step.text,
+      tick / DAY_DURATION + 1,
+      GetResource(Resource::Peoples),
+      totalResources[Resource::Minerals],
+      totalResources[Resource::Gas],
+      totalResources[Resource::Science]
+    ));
+    break;
+  default:
+    break;
+  }
+
+  text.append("\n\n");
+  int index = 1;
+  for(const auto& choice : step.choices) {
+    text.append(fmt::format("    {}. {}\n", index, choice.second));
+    index++;
+  }
+
+  return text;
 }
 
 std::string World::GetStatus() {

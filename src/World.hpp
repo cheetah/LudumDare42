@@ -114,10 +114,13 @@ class World : Object {
 private:
   static const int SIZE = 8;
   static const int DAY_DURATION = 60;
+  static const int OXYGEN_TANK_CAPACITY = 1000;
 
   std::array<std::array<Tile::Type, SIZE>, SIZE> foundation = {Tile::Type::Null};
 
   std::map<Resource, int> resources;
+  std::map<Resource, int> totalResources;
+
   std::vector<Building::Type> buildings;
   std::vector<std::string> worldLog;
 
@@ -194,7 +197,7 @@ private:
     .type = Event::Type::Start,
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
-        .text = "You are head of research.",
+        .text = "You are the head of research group, based on asteroid belt. Finally you and your group reached perspective asteroid, and prepared to set up camp. Maybe you made a mistake in the calculations or something else happened, but the surface could not stand the landing of you ship. You have a few resource, some scientific equipment, but land is actually falls down. Help will arrive in about 10 days. Can you survive and save your crew and scientific data? You have to build buildings, gather resources and make decisions, but remember, at any moment everything can collapse.\n\n(Use alpha keys to select answer)",
         .choices = std::map<int, std::string>{
           {1, "Start game"}
         }
@@ -206,7 +209,7 @@ private:
     .type = Event::Type::Win,
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
-        .text = "Congratulations! You win.",
+        .text = "Congratulations, you won! Help is finally arrived, people grabs their research data and climbs to the rescue drones.\n\n{} days on asteroid\n{} peoples rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
         .choices = std::map<int, std::string>{
           {1, "Restart game"}
         }
@@ -218,7 +221,7 @@ private:
     .type = Event::Type::Lose,
     .steps = std::map<int, Event::Step>{
       {0, Event::Step{
-        .text = "Sorry but you lost.",
+        .text = "Sorry, but there are no people left. You lost.\n\n{} days on asteroid\n{} peoples rescued\n{} minerals extracted\n{} gas refined\n{} scientific data gathered",
         .choices = std::map<int, std::string>{
           {1, "Restart game"}
         }
@@ -251,10 +254,12 @@ public:
   std::string GetResourceName(Resource res);
 
   bool TryToBuild(Building::Type building, int x, int y);
+  void RemoveBuilding(int x, int y);
 
   bool HasEvent() const { return (currentEvent != nullptr); }
   void EmitEvent(Event::Type type);
   void HandleStepEvent(int step);
+  std::string GetEventText();
   int GetCurrentEventStep() const { return currentEventStep; }
   Event::Info* GetCurrentEvent() const { return currentEvent; }
 
